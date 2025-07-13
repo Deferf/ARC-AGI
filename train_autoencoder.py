@@ -11,7 +11,6 @@ import argparse
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.tensorboard import SummaryWriter
 import numpy as np
 from typing import Dict, List, Optional, Tuple
 import time
@@ -218,7 +217,7 @@ class AutoencoderTrainerExtended(AutoencoderTrainer):
                 'avg_loss': f'{total_loss / num_batches:.4f}'
             })
             
-            # Log to TensorBoard
+            # Log metrics (commented out)
             # if self.writer:
             #     self.writer.add_scalar('Loss/train_step', loss.item(), self.global_step)
             #     self.global_step += 1

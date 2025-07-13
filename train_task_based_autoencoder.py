@@ -12,7 +12,6 @@ import argparse
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.tensorboard import SummaryWriter
 import numpy as np
 from typing import Dict, List, Optional, Tuple
 import time
@@ -253,7 +252,7 @@ class TaskBasedTrainer:
                     best_val_loss = val_metrics['loss']
                     self.save_checkpoint(epoch + 1, val_metrics, checkpoint_dir, is_best=True)
             
-            # Print metrics (no TensorBoard)
+            # Print metrics
             self._print_metrics(train_metrics, val_metrics)
             
             # Save checkpoint periodically
