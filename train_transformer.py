@@ -40,11 +40,6 @@ class ARCTrainer:
         self.writer = None
         self.global_step = 0
         
-    def setup_logging(self, log_dir: str):
-        """Setup TensorBoard logging."""
-        os.makedirs(log_dir, exist_ok=True)
-        self.writer = SummaryWriter(log_dir)
-        
     def train_epoch(self, train_loader, epoch: int) -> Dict[str, float]:
         """Train for one epoch."""
         self.model.train()
@@ -188,7 +183,6 @@ class ARCTrainer:
     def train(self, train_loader, val_loader, num_epochs: int, 
               checkpoint_dir: str = 'checkpoints', log_dir: str = 'logs'):
         """Main training loop."""
-        self.setup_logging(log_dir)
         os.makedirs(checkpoint_dir, exist_ok=True)
         
         best_val_loss = float('inf')
@@ -208,12 +202,6 @@ class ARCTrainer:
             
             # Combine metrics
             metrics = {**train_metrics, **val_metrics}
-            
-            # Log metrics
-            if self.writer:
-                for key, value in metrics.items():
-                    self.writer.add_scalar(key, value, epoch)
-                self.writer.add_scalar('Learning_rate', self.optimizer.param_groups[0]['lr'], epoch)
             
             # Print progress
             epoch_time = time.time() - epoch_start_time
@@ -237,8 +225,7 @@ class ARCTrainer:
         total_time = time.time() - start_time
         print(f"\nTraining completed in {total_time:.2f} seconds")
         
-        if self.writer:
-            self.writer.close()
+        # REMOVED: if self.writer: self.writer.close()
 
 
 def evaluate_model(model: ARCGridTransformer, test_loader, device: str = 'cuda') -> Dict[str, float]:

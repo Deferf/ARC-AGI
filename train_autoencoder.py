@@ -219,9 +219,9 @@ class AutoencoderTrainerExtended(AutoencoderTrainer):
             })
             
             # Log to TensorBoard
-            if self.writer:
-                self.writer.add_scalar('Loss/train_step', loss.item(), self.global_step)
-                self.global_step += 1
+            # if self.writer:
+            #     self.writer.add_scalar('Loss/train_step', loss.item(), self.global_step)
+            #     self.global_step += 1
         
         avg_loss = total_loss / num_batches
         return {'train_loss': avg_loss}
@@ -306,7 +306,6 @@ class AutoencoderTrainerExtended(AutoencoderTrainer):
     def train(self, train_loader, val_loader, num_epochs: int, 
               checkpoint_dir: str = 'checkpoints', log_dir: str = 'logs'):
         """Main training loop."""
-        self.setup_logging(log_dir)
         os.makedirs(checkpoint_dir, exist_ok=True)
         
         best_val_loss = float('inf')
@@ -326,12 +325,6 @@ class AutoencoderTrainerExtended(AutoencoderTrainer):
             
             # Combine metrics
             metrics = {**train_metrics, **val_metrics}
-            
-            # Log metrics
-            if self.writer:
-                for key, value in metrics.items():
-                    self.writer.add_scalar(key, value, epoch)
-                self.writer.add_scalar('Learning_rate', self.optimizer.param_groups[0]['lr'], epoch)
             
             # Print progress
             epoch_time = time.time() - epoch_start_time
@@ -355,9 +348,6 @@ class AutoencoderTrainerExtended(AutoencoderTrainer):
         
         total_time = time.time() - start_time
         print(f"\nTraining completed in {total_time:.2f} seconds")
-        
-        if self.writer:
-            self.writer.close()
 
 
 def evaluate_autoencoder(model: TransformerAutoencoder, test_loader, device: str = 'cuda') -> Dict[str, float]:
