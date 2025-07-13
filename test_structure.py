@@ -15,6 +15,9 @@ def test_file_structure():
         'transformer.py',
         'arc_data_loader.py', 
         'train_transformer.py',
+        'transformer_autoencoder.py',
+        'train_autoencoder.py',
+        'example_autoencoder.py',
         'requirements.txt',
         'README_TRANSFORMER.md',
         'example_usage.py'
@@ -43,6 +46,9 @@ def test_python_syntax():
         'transformer.py',
         'arc_data_loader.py',
         'train_transformer.py',
+        'transformer_autoencoder.py',
+        'train_autoencoder.py',
+        'example_autoencoder.py',
         'example_usage.py'
     ]
     
@@ -99,6 +105,12 @@ def test_imports():
         print("✓ arc_data_loader.py imports OK")
     except ImportError as e:
         print(f"✗ arc_data_loader.py import failed (expected without PyTorch): {e}")
+    
+    try:
+        import transformer_autoencoder
+        print("✓ transformer_autoencoder.py imports OK")
+    except ImportError as e:
+        print(f"✗ transformer_autoencoder.py import failed (expected without PyTorch): {e}")
     
     return True
 
@@ -169,17 +181,52 @@ def test_documentation():
         print(f"✗ Error reading documentation: {e}")
         return False
 
+def test_autoencoder_specifications():
+    """Test that autoencoder files contain the correct specifications."""
+    print("\n=== Testing Autoencoder Specifications ===")
+    
+    try:
+        with open('transformer_autoencoder.py', 'r') as f:
+            content = f.read()
+        
+        # Check for key specifications
+        key_specs = [
+            '1+900+900 tokens',
+            '1024-dimensional vector',
+            '900+900 tokens',
+            'input_seq_len = 1801',
+            'output_seq_len = 1800',
+            'latent_dim = 1024'
+        ]
+        
+        missing_specs = []
+        for spec in key_specs:
+            if spec not in content:
+                missing_specs.append(spec)
+        
+        if missing_specs:
+            print(f"✗ Missing autoencoder specifications: {missing_specs}")
+            return False
+        else:
+            print("✓ Autoencoder specifications found")
+            return True
+            
+    except Exception as e:
+        print(f"✗ Error reading autoencoder file: {e}")
+        return False
+
 def main():
     """Run all tests."""
-    print("ARC Transformer Implementation - Structure Test")
-    print("=" * 50)
+    print("Transformer & Autoencoder Implementation - Structure Test")
+    print("=" * 60)
     
     tests = [
         test_file_structure,
         test_python_syntax,
         test_imports,
         test_requirements,
-        test_documentation
+        test_documentation,
+        test_autoencoder_specifications
     ]
     
     passed = 0
@@ -192,15 +239,17 @@ def main():
         except Exception as e:
             print(f"✗ Test {test.__name__} failed with exception: {e}")
     
-    print("\n" + "=" * 50)
+    print("\n" + "=" * 60)
     print(f"Test Results: {passed}/{total} tests passed")
     
     if passed == total:
-        print("🎉 All tests passed! The transformer implementation is ready.")
-        print("\nTo use the transformer:")
+        print("🎉 All tests passed! The transformer and autoencoder implementations are ready.")
+        print("\nTo use the implementations:")
         print("1. Install dependencies: pip install -r requirements.txt")
-        print("2. Run example: python3 example_usage.py")
-        print("3. Train model: python3 train_transformer.py --help")
+        print("2. Run transformer example: python3 example_usage.py")
+        print("3. Run autoencoder example: python3 example_autoencoder.py")
+        print("4. Train transformer: python3 train_transformer.py --help")
+        print("5. Train autoencoder: python3 train_autoencoder.py --help")
     else:
         print("❌ Some tests failed. Please check the implementation.")
     
