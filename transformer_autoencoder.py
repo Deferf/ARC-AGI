@@ -482,13 +482,6 @@ class AutoencoderTrainer:
         self.writer = None
         self.global_step = 0
         
-    def setup_logging(self, log_dir: str):
-        """Setup TensorBoard logging."""
-        import os
-        os.makedirs(log_dir, exist_ok=True)
-        from torch.utils.tensorboard import SummaryWriter
-        self.writer = SummaryWriter(log_dir)
-        
     def train_step(self, input_seq: torch.Tensor, target_seq: torch.Tensor) -> float:
         """
         Single training step.

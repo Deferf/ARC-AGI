@@ -60,10 +60,6 @@ class TaskBasedTrainer:
         self.train_history = []
         self.val_history = []
         
-    def setup_logging(self, log_dir: str):
-        """Setup TensorBoard logging."""
-        self.writer = SummaryWriter(log_dir)
-        
     def train_epoch(self, train_loader: EnhancedTaskBasedDataLoader, epoch: int) -> Dict[str, float]:
         """Train for one epoch."""
         self.model.train()
@@ -233,8 +229,6 @@ class TaskBasedTrainer:
               num_epochs: int, checkpoint_dir: str = 'checkpoints', 
               log_dir: str = 'logs', save_freq: int = 5):
         """Complete training loop."""
-        self.setup_logging(log_dir)
-        
         best_val_loss = float('inf')
         
         for epoch in range(num_epochs):
@@ -259,10 +253,7 @@ class TaskBasedTrainer:
                     best_val_loss = val_metrics['loss']
                     self.save_checkpoint(epoch + 1, val_metrics, checkpoint_dir, is_best=True)
             
-            # Log metrics
-            self._log_metrics(train_metrics, val_metrics, epoch + 1)
-            
-            # Print metrics
+            # Print metrics (no TensorBoard)
             self._print_metrics(train_metrics, val_metrics)
             
             # Save checkpoint periodically
@@ -271,18 +262,6 @@ class TaskBasedTrainer:
                 self.save_checkpoint(epoch + 1, metrics_to_save, checkpoint_dir)
         
         print(f"\nTraining completed! Best validation loss: {best_val_loss:.4f}")
-    
-    def _log_metrics(self, train_metrics: Dict[str, float], 
-                    val_metrics: Optional[Dict[str, float]], epoch: int):
-        """Log metrics to TensorBoard."""
-        # Log training metrics
-        for key, value in train_metrics.items():
-            self.writer.add_scalar(f'train/{key}', value, epoch)
-        
-        # Log validation metrics
-        if val_metrics:
-            for key, value in val_metrics.items():
-                self.writer.add_scalar(f'val/{key}', value, epoch)
     
     def _print_metrics(self, train_metrics: Dict[str, float], 
                       val_metrics: Optional[Dict[str, float]]):
