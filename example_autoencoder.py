@@ -9,6 +9,7 @@ import torch
 import numpy as np
 from transformer_autoencoder import TransformerAutoencoder, ARCAutoencoder
 from arc_data_loader import visualize_grid, grid_to_string
+from device_utils import setup_device
 
 
 def create_sample_sequences():
@@ -326,9 +327,9 @@ def main():
     print("- Decoder: 1024-dimensional vector -> 900+900 tokens")
     print("=" * 60)
     
-    # Check if CUDA is available
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    print(f"Using device: {device}")
+    # Setup device with Metal support
+    torch_device = setup_device('auto', verbose=True)
+    device = str(torch_device)
     print()
     
     # Run demonstrations

@@ -20,6 +20,7 @@ import random
 
 from transformer_autoencoder import TransformerAutoencoder, ARCAutoencoder, AutoencoderTrainer
 from arc_data_loader import create_arc_dataloaders, ARCTestDataset, visualize_grid, grid_to_string
+from device_utils import setup_device, move_to_device, get_memory_stats
 
 
 class AutoencoderDataset(torch.utils.data.Dataset):
@@ -426,8 +427,8 @@ def main():
                        help='Directory to save checkpoints')
     parser.add_argument('--log_dir', type=str, default='logs',
                        help='Directory to save logs')
-    parser.add_argument('--device', type=str, default='cuda',
-                       help='Device to use (cuda/cpu)')
+    parser.add_argument('--device', type=str, default='auto',
+                       help='Device to use (auto/mps/cuda/cpu)')
     parser.add_argument('--resume', type=str, default=None,
                        help='Path to checkpoint to resume from')
     parser.add_argument('--evaluate', action='store_true',
@@ -437,9 +438,9 @@ def main():
     
     args = parser.parse_args()
     
-    # Set device
-    device = args.device if torch.cuda.is_available() and args.device == 'cuda' else 'cpu'
-    print(f"Using device: {device}")
+    # Set device with Metal support
+    torch_device = setup_device(args.device, verbose=True)
+    device = str(torch_device)
     
     # Create model
     if args.arc_mode:

@@ -232,8 +232,7 @@ class AutoencoderDecoder(nn.Module):
         
         # Create causal mask for self-attention
         tgt_mask = self.generate_square_subsequent_mask(self.output_seq_len)
-        if latent.is_cuda:
-            tgt_mask = tgt_mask.cuda()
+        tgt_mask = tgt_mask.to(latent.device)
         
         # Pass through transformer layers
         # For autoencoder, we use the same input for both encoder and decoder

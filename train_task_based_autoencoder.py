@@ -28,6 +28,7 @@ from enhanced_task_autoencoder import (
     evaluate_enhanced_model
 )
 from arc_data_loader import ARCTask, visualize_grid, grid_to_string
+from device_utils import setup_device, move_to_device, get_memory_stats
 
 
 class TaskBasedTrainer:
@@ -413,7 +414,7 @@ def main():
     parser.add_argument('--dropout', type=float, default=0.1,
                        help='Dropout rate')
     parser.add_argument('--device', type=str, default='auto',
-                       help='Device to use (auto, cuda, cpu)')
+                       help='Device to use (auto/mps/cuda/cpu)')
     parser.add_argument('--save_freq', type=int, default=5,
                        help='Save checkpoint every N epochs')
     parser.add_argument('--val_split', type=float, default=0.2,
@@ -421,13 +422,9 @@ def main():
     
     args = parser.parse_args()
     
-    # Set device
-    if args.device == 'auto':
-        device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    else:
-        device = args.device
-    
-    print(f"Using device: {device}")
+    # Set device with Metal support
+    torch_device = setup_device(args.device, verbose=True)
+    device = str(torch_device)
     
     # Create model
     model = EnhancedTaskBasedAutoencoder(

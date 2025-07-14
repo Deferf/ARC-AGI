@@ -8,6 +8,7 @@ import torch
 import numpy as np
 from transformer import ARCGridTransformer, Transformer
 from arc_data_loader import visualize_grid, grid_to_string, string_to_grid
+from device_utils import setup_device
 
 
 def create_sample_grids():
@@ -268,9 +269,9 @@ def main():
     print("ARC Transformer Implementation - Example Usage")
     print("=" * 50)
     
-    # Check if CUDA is available
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    print(f"Using device: {device}")
+    # Setup device with Metal support
+    torch_device = setup_device('auto', verbose=True)
+    device = str(torch_device)
     print()
     
     # Run demonstrations
