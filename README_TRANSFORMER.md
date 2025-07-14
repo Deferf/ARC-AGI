@@ -156,19 +156,13 @@ Uses Cross-Entropy Loss with padding token ignored:
 
 ## Monitoring Training
 
-### TensorBoard Logging
+### Training Progress
 
-Training progress is logged to TensorBoard:
-
-```bash
-tensorboard --logdir logs
-```
-
-Available metrics:
-- Training loss
-- Validation loss
-- Validation accuracy
-- Learning rate
+Training progress is monitored through console output:
+- Training loss per epoch
+- Validation loss per epoch
+- Validation accuracy per epoch
+- Learning rate updates
 
 ### Checkpoints
 
@@ -269,7 +263,6 @@ print(grid_str)
 ├── requirements.txt        # Dependencies
 ├── README_TRANSFORMER.md   # This file
 ├── checkpoints/           # Saved model checkpoints
-├── logs/                  # TensorBoard logs
 └── solutions/             # Generated solutions
 ```
 

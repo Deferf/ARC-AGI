@@ -12,7 +12,6 @@ import argparse
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.tensorboard import SummaryWriter
 import numpy as np
 from typing import Dict, List, Optional, Tuple
 import time
@@ -254,7 +253,7 @@ class TaskBasedTrainer:
                     best_val_loss = val_metrics['loss']
                     self.save_checkpoint(epoch + 1, val_metrics, checkpoint_dir, is_best=True)
             
-            # Print metrics (no TensorBoard)
+            # Print metrics
             self._print_metrics(train_metrics, val_metrics)
             
             # Save checkpoint periodically
@@ -419,12 +418,22 @@ def main():
                        help='Save checkpoint every N epochs')
     parser.add_argument('--val_split', type=float, default=0.2,
                        help='Validation split ratio')
+    parser.add_argument('--save_eval_images', action='store_true',
+                       help='Save input/output/prediction images during evaluation')
+    parser.add_argument('--eval_output_dir', type=str, default='evaluation_images',
+                       help='Directory to save evaluation images')
+    parser.add_argument('--evaluate', action='store_true',
+                       help='Only evaluate model, do not train')
+    parser.add_argument('--checkpoint', type=str, default=None,
+                       help='Path to checkpoint to load for evaluation')
     
     args = parser.parse_args()
     
-    # Set device with Metal support
-    torch_device = setup_device(args.device, verbose=True)
-    device = str(torch_device)
+    # Set device with Metal backend support
+    from evaluation_utils import get_device
+    device = get_device(args.device)
+    
+    print(f"Using device: {device}")
     
     # Create model
     model = EnhancedTaskBasedAutoencoder(
@@ -447,6 +456,44 @@ def main():
         learning_rate=args.learning_rate,
         weight_decay=args.weight_decay
     )
+    
+    # Load checkpoint if provided
+    if args.checkpoint:
+        print(f"Loading checkpoint from: {args.checkpoint}")
+        trainer.load_checkpoint(args.checkpoint)
+    
+    # Evaluation mode
+    if args.evaluate:
+        print("Running evaluation...")
+        if args.val_dir and os.path.exists(args.val_dir):
+            # Load evaluation data
+            val_loader = create_enhanced_task_dataloader(
+                args.val_dir, args.batch_size, args.max_grid_size
+            )
+            # Get all tasks from the loader
+            test_tasks = val_loader.tasks
+        else:
+            # Create sample tasks for evaluation
+            test_tasks = create_sample_tasks_for_training(10)
+        
+        # Evaluate model
+        results = evaluate_enhanced_model(
+            model, test_tasks, device,
+            save_images=args.save_eval_images,
+            output_dir=args.eval_output_dir
+        )
+        
+        print("\nEvaluation Results:")
+        print(f"Overall Accuracy: {results['accuracy']:.4f}")
+        print(f"Prediction Accuracy: {results['prediction_accuracy']:.4f}")
+        print(f"Total Tasks: {results['total_tasks']}")
+        print(f"Total Predictions: {results['total_predictions']}")
+        print(f"Correct Predictions: {results['correct_predictions']}")
+        
+        if args.save_eval_images:
+            print(f"\nEvaluation images saved to: {args.eval_output_dir}")
+        
+        return
     
     # Load or create data
     if args.data_dir and os.path.exists(args.data_dir):

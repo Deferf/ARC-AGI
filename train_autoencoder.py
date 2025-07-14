@@ -11,7 +11,6 @@ import argparse
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.tensorboard import SummaryWriter
 import numpy as np
 from typing import Dict, List, Optional, Tuple
 import time
@@ -219,7 +218,7 @@ class AutoencoderTrainerExtended(AutoencoderTrainer):
                 'avg_loss': f'{total_loss / num_batches:.4f}'
             })
             
-            # Log to TensorBoard
+            # Log metrics (commented out)
             # if self.writer:
             #     self.writer.add_scalar('Loss/train_step', loss.item(), self.global_step)
             #     self.global_step += 1
@@ -351,16 +350,21 @@ class AutoencoderTrainerExtended(AutoencoderTrainer):
         print(f"\nTraining completed in {total_time:.2f} seconds")
 
 
-def evaluate_autoencoder(model: TransformerAutoencoder, test_loader, device: str = 'cuda') -> Dict[str, float]:
+def evaluate_autoencoder(model: TransformerAutoencoder, test_loader, device: str = 'cuda',
+                        save_images: bool = False, output_dir: str = 'evaluation_images',
+                        max_images: int = 50) -> Dict[str, float]:
     """Evaluate autoencoder on test set."""
+    from evaluation_utils import save_input_output_pair, save_evaluation_summary
+    
     model.eval()
     total_loss = 0.0
     num_batches = 0
     correct_predictions = 0
     total_predictions = 0
+    images_saved = 0
     
     with torch.no_grad():
-        for input_seq, target_seq in tqdm(test_loader, desc="Testing"):
+        for batch_idx, (input_seq, target_seq) in enumerate(tqdm(test_loader, desc="Testing")):
             input_seq = input_seq.to(device)
             target_seq = target_seq.to(device)
             
@@ -377,14 +381,35 @@ def evaluate_autoencoder(model: TransformerAutoencoder, test_loader, device: str
             predictions = output_logits.argmax(dim=-1)
             correct_predictions += (predictions == target_seq).sum().item()
             total_predictions += target_seq.numel()
+            
+            # Save images if requested (limit number to avoid too many files)
+            if save_images and images_saved < max_images:
+                # Save first item in batch
+                save_input_output_pair(
+                    input_grid=input_seq[0],
+                    output_grid=target_seq[0],
+                    predicted_grid=predictions[0],
+                    task_id=f"batch_{batch_idx}",
+                    pair_idx=0,
+                    output_dir=output_dir
+                )
+                images_saved += 1
     
     avg_loss = total_loss / num_batches
     accuracy = correct_predictions / total_predictions if total_predictions > 0 else 0
     
-    return {
+    results = {
         'test_loss': avg_loss,
-        'test_accuracy': accuracy
+        'test_accuracy': accuracy,
+        'total_batches': num_batches,
+        'images_saved': images_saved if save_images else 0
     }
+    
+    # Save evaluation summary if images were saved
+    if save_images:
+        save_evaluation_summary(results, output_dir)
+    
+    return results
 
 
 def generate_from_latent(model: TransformerAutoencoder, latent: torch.Tensor, 
@@ -435,12 +460,16 @@ def main():
                        help='Only evaluate model, do not train')
     parser.add_argument('--arc_mode', action='store_true',
                        help='Use ARC-specific autoencoder')
+    parser.add_argument('--save_eval_images', action='store_true',
+                       help='Save input/output/prediction images during evaluation')
+    parser.add_argument('--eval_output_dir', type=str, default='evaluation_images',
+                       help='Directory to save evaluation images')
     
     args = parser.parse_args()
-    
-    # Set device with Metal support
-    torch_device = setup_device(args.device, verbose=True)
-    device = str(torch_device)
+    # Set device with Metal backend support
+    from evaluation_utils import get_device
+    device = get_device(args.device)
+    print(f"Using device: {device}")
     
     # Create model
     if args.arc_mode:
@@ -487,8 +516,14 @@ def main():
         )
         
         # Evaluate model
-        test_metrics = evaluate_autoencoder(model, test_loader, device)
+        test_metrics = evaluate_autoencoder(
+            model, test_loader, device,
+            save_images=args.save_eval_images,
+            output_dir=args.eval_output_dir
+        )
         print(f"Test metrics: {test_metrics}")
+        if args.save_eval_images:
+            print(f"Evaluation images saved to: {args.eval_output_dir}")
     
     else:
         # Training mode

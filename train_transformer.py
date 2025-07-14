@@ -9,7 +9,6 @@ import argparse
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.tensorboard import SummaryWriter
 import numpy as np
 from typing import Dict, List, Optional, Tuple
 import time
@@ -38,7 +37,6 @@ class ARCTrainer:
         )
         self.criterion = nn.CrossEntropyLoss(ignore_index=0)  # Ignore padding
         
-        self.writer = None
         self.global_step = 0
         
     def train_epoch(self, train_loader, epoch: int) -> Dict[str, float]:
@@ -89,10 +87,7 @@ class ARCTrainer:
                 'avg_loss': f'{total_loss / num_batches:.4f}'
             })
             
-            # Log to TensorBoard
-            if self.writer:
-                self.writer.add_scalar('Loss/train_step', loss.item(), self.global_step)
-                self.global_step += 1
+            self.global_step += 1
         
         avg_loss = total_loss / num_batches
         return {'train_loss': avg_loss}
