@@ -358,7 +358,8 @@ def create_enhanced_task_dataloader(data_dir: str, batch_size: int = 4,
 
 
 def evaluate_enhanced_model(model: EnhancedTaskBasedAutoencoder, test_tasks: List[ARCTask], 
-                          device: str = 'cuda') -> Dict[str, float]:
+                          device: str = 'cuda', save_images: bool = False,
+                          output_dir: str = 'evaluation_images') -> Dict[str, float]:
     """
     Evaluate the enhanced task-based model.
     
@@ -366,15 +367,21 @@ def evaluate_enhanced_model(model: EnhancedTaskBasedAutoencoder, test_tasks: Lis
         model: EnhancedTaskBasedAutoencoder model
         test_tasks: List of test tasks
         device: Device to run computation on
+        save_images: Whether to save input/output/prediction images
+        output_dir: Directory to save evaluation images
         
     Returns:
         Dictionary containing evaluation metrics
     """
+    from evaluation_utils import save_input_output_pair, save_evaluation_summary
+    
     model.eval()
     
     total_accuracy = 0.0
     total_tasks = len(test_tasks)
     task_accuracies = {}
+    correct_predictions = 0
+    total_predictions = 0
     
     with torch.no_grad():
         for task_idx, task in enumerate(test_tasks):
@@ -391,22 +398,47 @@ def evaluate_enhanced_model(model: EnhancedTaskBasedAutoencoder, test_tasks: Lis
             task_accuracy = 0.0
             num_test_entries = len(test_entries)
             
-            for i, (_, expected_output, _) in enumerate(test_entries):
+            for i, (input_grid, expected_output, _) in enumerate(test_entries):
                 if i < len(predictions):
                     predicted_output = predictions[i]
                     
                     # Calculate accuracy (exact match)
-                    if torch.equal(predicted_output, expected_output):
+                    is_correct = torch.equal(predicted_output, expected_output)
+                    if is_correct:
                         task_accuracy += 1.0
+                        correct_predictions += 1
+                    
+                    total_predictions += 1
+                    
+                    # Save images if requested
+                    if save_images:
+                        save_input_output_pair(
+                            input_grid=input_grid,
+                            output_grid=expected_output,
+                            predicted_grid=predicted_output,
+                            task_id=task.task_id,
+                            pair_idx=i,
+                            output_dir=output_dir
+                        )
             
             task_accuracy /= num_test_entries if num_test_entries > 0 else 1.0
             total_accuracy += task_accuracy
             task_accuracies[f'task_{task_idx}'] = task_accuracy
     
     avg_accuracy = total_accuracy / total_tasks if total_tasks > 0 else 0.0
+    prediction_accuracy = correct_predictions / total_predictions if total_predictions > 0 else 0.0
     
-    return {
+    results = {
         'accuracy': avg_accuracy,
+        'prediction_accuracy': prediction_accuracy,
         'total_tasks': total_tasks,
+        'total_predictions': total_predictions,
+        'correct_predictions': correct_predictions,
         **task_accuracies
     }
+    
+    # Save evaluation summary if images were saved
+    if save_images:
+        save_evaluation_summary(results, output_dir)
+    
+    return results

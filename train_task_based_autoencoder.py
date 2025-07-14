@@ -412,19 +412,25 @@ def main():
     parser.add_argument('--dropout', type=float, default=0.1,
                        help='Dropout rate')
     parser.add_argument('--device', type=str, default='auto',
-                       help='Device to use (auto, cuda, cpu)')
+                       help='Device to use (auto/cuda/mps/cpu)')
     parser.add_argument('--save_freq', type=int, default=5,
                        help='Save checkpoint every N epochs')
     parser.add_argument('--val_split', type=float, default=0.2,
                        help='Validation split ratio')
+    parser.add_argument('--save_eval_images', action='store_true',
+                       help='Save input/output/prediction images during evaluation')
+    parser.add_argument('--eval_output_dir', type=str, default='evaluation_images',
+                       help='Directory to save evaluation images')
+    parser.add_argument('--evaluate', action='store_true',
+                       help='Only evaluate model, do not train')
+    parser.add_argument('--checkpoint', type=str, default=None,
+                       help='Path to checkpoint to load for evaluation')
     
     args = parser.parse_args()
     
-    # Set device
-    if args.device == 'auto':
-        device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    else:
-        device = args.device
+    # Set device with Metal backend support
+    from evaluation_utils import get_device
+    device = get_device(args.device)
     
     print(f"Using device: {device}")
     
@@ -449,6 +455,44 @@ def main():
         learning_rate=args.learning_rate,
         weight_decay=args.weight_decay
     )
+    
+    # Load checkpoint if provided
+    if args.checkpoint:
+        print(f"Loading checkpoint from: {args.checkpoint}")
+        trainer.load_checkpoint(args.checkpoint)
+    
+    # Evaluation mode
+    if args.evaluate:
+        print("Running evaluation...")
+        if args.val_dir and os.path.exists(args.val_dir):
+            # Load evaluation data
+            val_loader = create_enhanced_task_dataloader(
+                args.val_dir, args.batch_size, args.max_grid_size
+            )
+            # Get all tasks from the loader
+            test_tasks = val_loader.tasks
+        else:
+            # Create sample tasks for evaluation
+            test_tasks = create_sample_tasks_for_training(10)
+        
+        # Evaluate model
+        results = evaluate_enhanced_model(
+            model, test_tasks, device,
+            save_images=args.save_eval_images,
+            output_dir=args.eval_output_dir
+        )
+        
+        print("\nEvaluation Results:")
+        print(f"Overall Accuracy: {results['accuracy']:.4f}")
+        print(f"Prediction Accuracy: {results['prediction_accuracy']:.4f}")
+        print(f"Total Tasks: {results['total_tasks']}")
+        print(f"Total Predictions: {results['total_predictions']}")
+        print(f"Correct Predictions: {results['correct_predictions']}")
+        
+        if args.save_eval_images:
+            print(f"\nEvaluation images saved to: {args.eval_output_dir}")
+        
+        return
     
     # Load or create data
     if args.data_dir and os.path.exists(args.data_dir):
