@@ -23,6 +23,7 @@ from enhanced_task_autoencoder import (
     evaluate_enhanced_model
 )
 from arc_data_loader import ARCTask, visualize_grid, grid_to_string
+from device_utils import setup_device
 
 
 def create_sample_tasks() -> List[ARCTask]:
@@ -157,8 +158,8 @@ def demonstrate_model_creation_and_processing():
     task_batch = EnhancedTaskBatch(tasks, max_grid_size=10)
     
     # Process the task batch
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    print(f"Using device: {device}")
+    torch_device = setup_device('auto', verbose=True)
+    device = str(torch_device)
     
     try:
         results = model.process_task_batch_enhanced(task_batch, device)
@@ -201,7 +202,7 @@ def demonstrate_training():
     tasks = create_sample_tasks()
     task_batch = EnhancedTaskBatch(tasks, max_grid_size=10)
     
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    device = str(setup_device('auto', verbose=False))
     model = model.to(device)
     
     print(f"Training on {len(tasks)} tasks...")
@@ -245,7 +246,7 @@ def demonstrate_evaluation():
     # Create sample tasks for evaluation
     test_tasks = create_sample_tasks()
     
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    device = str(setup_device('auto', verbose=False))
     model = model.to(device)
     
     print(f"Evaluating model on {len(test_tasks)} test tasks...")
@@ -305,7 +306,7 @@ def demonstrate_autoregressive_generation():
         dropout=0.1
     )
     
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    device = str(setup_device('auto', verbose=False))
     model = model.to(device)
     
     # Create a simple task for demonstration
@@ -365,11 +366,8 @@ def main():
     print("Task-Based Autoencoder System Demonstration")
     print("=" * 50)
     
-    # Check if CUDA is available
-    if torch.cuda.is_available():
-        print(f"CUDA available: {torch.cuda.get_device_name(0)}")
-    else:
-        print("CUDA not available, using CPU")
+    # Setup device with Metal support
+    torch_device = setup_device('auto', verbose=True)
     
     print()
     

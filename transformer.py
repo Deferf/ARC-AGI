@@ -325,8 +325,7 @@ class Transformer(nn.Module):
         """
         if tgt_mask is None:
             tgt_mask = self.generate_square_subsequent_mask(tgt.size(1))
-            if tgt.is_cuda:
-                tgt_mask = tgt_mask.cuda()
+            tgt_mask = tgt_mask.to(tgt.device)
         
         src_embedded = self.src_embedding(src)
         tgt_embedded = self.tgt_embedding(tgt)
@@ -432,9 +431,7 @@ class ARCGridTransformer(nn.Module):
             
             # Start with start token
             batch_size = input_seq.size(0)
-            generated = torch.zeros(batch_size, 1, dtype=torch.long)
-            if input_seq.is_cuda:
-                generated = generated.cuda()
+            generated = torch.zeros(batch_size, 1, dtype=torch.long, device=input_seq.device)
             
             for i in range(max_length):
                 output = self.transformer(input_seq, generated)

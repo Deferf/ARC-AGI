@@ -19,6 +19,7 @@ import random
 
 from transformer_autoencoder import TransformerAutoencoder, ARCAutoencoder, AutoencoderTrainer
 from arc_data_loader import create_arc_dataloaders, ARCTestDataset, visualize_grid, grid_to_string
+from device_utils import setup_device, move_to_device, get_memory_stats
 
 
 class AutoencoderDataset(torch.utils.data.Dataset):
@@ -452,7 +453,7 @@ def main():
     parser.add_argument('--log_dir', type=str, default='logs',
                        help='Directory to save logs')
     parser.add_argument('--device', type=str, default='auto',
-                       help='Device to use (auto/cuda/mps/cpu)')
+                       help='Device to use (auto/mps/cuda/cpu)')
     parser.add_argument('--resume', type=str, default=None,
                        help='Path to checkpoint to resume from')
     parser.add_argument('--evaluate', action='store_true',
@@ -465,7 +466,6 @@ def main():
                        help='Directory to save evaluation images')
     
     args = parser.parse_args()
-    
     # Set device with Metal backend support
     from evaluation_utils import get_device
     device = get_device(args.device)

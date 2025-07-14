@@ -27,6 +27,7 @@ from enhanced_task_autoencoder import (
     evaluate_enhanced_model
 )
 from arc_data_loader import ARCTask, visualize_grid, grid_to_string
+from device_utils import setup_device, move_to_device, get_memory_stats
 
 
 class TaskBasedTrainer:
@@ -412,7 +413,7 @@ def main():
     parser.add_argument('--dropout', type=float, default=0.1,
                        help='Dropout rate')
     parser.add_argument('--device', type=str, default='auto',
-                       help='Device to use (auto/cuda/mps/cpu)')
+                       help='Device to use (auto/mps/cuda/cpu)')
     parser.add_argument('--save_freq', type=int, default=5,
                        help='Save checkpoint every N epochs')
     parser.add_argument('--val_split', type=float, default=0.2,
